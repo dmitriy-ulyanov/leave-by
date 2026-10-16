@@ -132,7 +132,7 @@ leave_by/
     core/
       routes/app_routes.dart
       constants/buffer_rules.dart
-      providers/clock_provider.dart
+      providers/{clock_provider.dart,id_provider.dart}
       utils/{validators.dart,formatters.dart}
     features/
       planner/
@@ -142,10 +142,10 @@ leave_by/
         presentation/  (PlannerScreen, widgets/RouteOptionCard)
       saved_trips/
         domain/        (SavedTrip)
-        data/          (SavedTripRepository, LocalSavedTripRepository)
+        data/          (SavedTripRepository, LocalSavedTripRepository, saved_trip_json, saved_trip_providers)
         application/   (SavedTripsNotifier, SavedTripFormNotifier)
         presentation/  (SavedTripsScreen, SavedTripFormScreen, widgets/SavedTripTile)
-    shared/widgets/    (ErrorView, EmptyView, PrimaryButton, AppTextField, ConfirmDialog)
+    shared/widgets/    (ErrorView, EmptyView, ConfirmDialog)
   assets/data/routes.json
   test/
   docs/

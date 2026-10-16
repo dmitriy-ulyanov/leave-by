@@ -94,12 +94,25 @@ Riverpod sengaja dipin ke 2.x. Riverpod 3 mencoba ulang provider yang gagal seca
 
 | Bagian | Status |
 |---|---|
-| `DepartureCalculator` + unit test | Ada |
-| Planner (enam state UI) + widget test | Ada |
+| `DepartureCalculator` + unit test | Ada, `flutter test` lulus |
+| Planner (enam state UI) + widget test | Ada, `flutter test` lulus |
 | Spesifikasi arsitektur (`ARCHITECTURE.md`, P2) | Ada |
-| Arsitektur hasil AI, routing, prototype layar (P3) | Belum |
-| Perjalanan Tersimpan: state management + penyimpanan lokal (P4, P5) | Belum |
+| Perjalanan Tersimpan: CRUD, state management, penyimpanan lokal (P4, P5) | Kode dan test sudah ditulis, belum dijalankan |
+| Routing antar halaman (`app_routes.dart`) | Ada, belum dijalankan |
+| Arsitektur hasil AI dan prototype layar (P3) | Belum |
 | Data jadwal asli | Belum |
-| Screenshot/video dokumentasi dan `docs/ai-prompts.md` | Kerangka ada, isi belum |
+| Screenshot/video dokumentasi dan isi `docs/ai-prompts.md` | Kerangka ada, isi belum |
 
-Kode belum dijalankan (`flutter run` dan `flutter test` belum diuji) karena dibuat tanpa Flutter SDK. Jalankan dulu sebelum dikumpulkan.
+## Lokasi kode Local Data & Persistence (untuk reviewer P5)
+
+- Model data: `lib/features/saved_trips/domain/saved_trip.dart`
+- Penyimpanan lokal (`shared_preferences`, JSON): `lib/features/saved_trips/data/local_saved_trip_repository.dart`
+- Pemetaan JSON: `lib/features/saved_trips/data/saved_trip_json.dart`
+- Kontrak repository: `lib/features/saved_trips/data/saved_trip_repository.dart`
+- Persistence test: `test/features/saved_trips/data/local_saved_trip_repository_test.dart` dan `test/features/saved_trips/presentation/persistence_flow_test.dart`
+
+## Lokasi kode state management (untuk reviewer P4)
+
+- `lib/features/planner/application/planner_notifier.dart`
+- `lib/features/saved_trips/application/saved_trips_notifier.dart` dan `saved_trip_form_notifier.dart`
+- Widget hanya memanggil method notifier dan membaca state lewat `ref.watch`.

@@ -28,7 +28,7 @@ class PlannerNotifier extends AsyncNotifier<PlannerData> {
             options,
             now: ref.read(clockProvider)(),
           );
-      state = AsyncData(current.copyWith(results: advice, isSubmitting: false, clearSearchError: true));
+      state = AsyncData(current.copyWith(results: advice, request: request, isSubmitting: false, clearSearchError: true));
     } catch (_) {
       state = AsyncData(current.copyWith(isSubmitting: false, searchError: 'Gagal memuat rute. Silakan coba lagi.'));
     }

@@ -2,11 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/providers/clock_provider.dart';
+import '../../../core/routes/app_routes.dart';
 import '../../../core/utils/validators.dart';
 import '../../../shared/widgets/empty_view.dart';
 import '../../../shared/widgets/error_view.dart';
 import '../application/planner_notifier.dart';
 import '../application/planner_state.dart';
+import '../../saved_trips/domain/saved_trip.dart';
+import '../domain/departure_advice.dart';
 import '../domain/trip_request.dart';
 import 'widgets/route_option_card.dart';
 
@@ -38,14 +41,38 @@ class _PlannerScreenState extends ConsumerState<PlannerScreen> {
         );
   }
 
+  void _openSaveForm(DepartureAdvice advice, TripRequest request) {
+    final trip = SavedTrip(
+      id: '',
+      title: '${request.origin} → ${request.destination}',
+      origin: request.origin,
+      destination: request.destination,
+      arriveBy: request.arriveBy,
+      optionLabel: advice.option.label,
+      departAt: advice.departAt,
+      createdAt: ref.read(clockProvider)(),
+    );
+    Navigator.pushNamed(context, AppRoutes.savedForm, arguments: trip);
+  }
+
   @override
   Widget build(BuildContext context) {
     final planner = ref.watch(plannerProvider);
     return Scaffold(
-      appBar: AppBar(title: const Text('Leave By')),
+      appBar: AppBar(
+        title: const Text('Leave By'),
+        actions: [
+          IconButton(
+            key: const Key('openSavedButton'),
+            icon: const Icon(Icons.bookmarks_outlined),
+            tooltip: 'Perjalanan Tersimpan',
+            onPressed: () => Navigator.pushNamed(context, AppRoutes.saved),
+          ),
+        ],
+      ),
       body: planner.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (_, __) => ErrorView(
+        error: (_, _) => ErrorView(
           message: 'Gagal memuat data lokasi.',
           onRetry: () => ref.invalidate(plannerProvider),
         ),
@@ -111,6 +138,13 @@ class _PlannerScreenState extends ConsumerState<PlannerScreen> {
     if (results.isEmpty) {
       return const [EmptyView(message: 'Tidak ada opsi yang sempat dikejar. Coba jam tiba yang lebih longgar.')];
     }
-    return [for (final advice in results) RouteOptionCard(advice: advice)];
+    final request = data.request;
+    return [
+      for (final advice in results)
+        RouteOptionCard(
+          advice: advice,
+          onSave: request == null ? null : () => _openSaveForm(advice, request),
+        ),
+    ];
   }
 }

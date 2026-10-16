@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'features/planner/presentation/planner_screen.dart';
+import 'core/routes/app_routes.dart';
 
 class App extends StatelessWidget {
   const App({super.key});
@@ -10,7 +10,8 @@ class App extends StatelessWidget {
     return MaterialApp(
       title: 'Leave By',
       theme: ThemeData(colorSchemeSeed: Colors.indigo, useMaterial3: true),
-      home: const PlannerScreen(),
+      initialRoute: AppRoutes.planner,
+      onGenerateRoute: AppRoutes.onGenerateRoute,
     );
   }
 }

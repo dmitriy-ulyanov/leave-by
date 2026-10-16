@@ -4,9 +4,10 @@ import '../../../../core/utils/formatters.dart';
 import '../../domain/departure_advice.dart';
 
 class RouteOptionCard extends StatelessWidget {
-  const RouteOptionCard({super.key, required this.advice});
+  const RouteOptionCard({super.key, required this.advice, this.onSave});
 
   final DepartureAdvice advice;
+  final VoidCallback? onSave;
 
   static String _tagLabel(AdviceTag tag) {
     switch (tag) {
@@ -41,6 +42,16 @@ class RouteOptionCard extends StatelessWidget {
                 child: Wrap(
                   spacing: 8,
                   children: [for (final tag in advice.tags) Chip(label: Text(_tagLabel(tag)))],
+                ),
+              ),
+            if (onSave != null)
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton.icon(
+                  key: Key('saveTrip_${option.id}'),
+                  onPressed: onSave,
+                  icon: const Icon(Icons.bookmark_add_outlined),
+                  label: const Text('Simpan'),
                 ),
               ),
           ],
