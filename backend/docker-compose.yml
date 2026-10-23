@@ -1,0 +1,10 @@
+services:
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - leave_by_data:/data
+
+volumes:
+  leave_by_data:

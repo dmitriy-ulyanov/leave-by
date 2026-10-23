@@ -31,7 +31,7 @@ class FakeRouteRepository implements RouteRepository {
 void main() {
   testWidgets('CRUD lewat UI dengan penyimpanan lokal: data tetap ada setelah dibuka ulang', (tester) async {
     SharedPreferences.setMockInitialValues({});
-    await pumpApp(tester);
+    await pumpApp(tester, repository: LocalSavedTripRepository());
     await tester.pumpAndSettle();
     expect(find.text('Belum ada perjalanan tersimpan.'), findsOneWidget);
 
@@ -48,7 +48,7 @@ void main() {
     await tester.pumpWidget(const SizedBox.shrink());
     SharedPreferences.setMockInitialValues({LocalSavedTripRepository.storageKey: stored!});
 
-    await pumpApp(tester);
+    await pumpApp(tester, repository: LocalSavedTripRepository());
     await tester.pumpAndSettle();
     expect(find.text('Ke bandara'), findsOneWidget);
   });

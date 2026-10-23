@@ -12,7 +12,10 @@ Use this stack:
 * Local persistence: `shared_preferences` storing JSON, hidden behind a repository interface so it can be replaced by SQLite later
 * Navigation: named routes defined in one `app_routes.dart` file
 * Tests: `flutter_test` unit and widget tests, fake repositories injected through provider overrides
-* No backend, no authentication and no network calls in this version
+* Backend: FastAPI with SQLAlchemy, SQLite by default (folder `backend/`), REST API with JSON properties in camelCase
+* HTTP client: `http` package, used by `RemoteSavedTripRepository` behind the same `SavedTripRepository` interface
+* The local repository stays in the code and is selected with `--dart-define=STORAGE=local`; the default is the remote repository
+* No authentication in this version (planned for the MVP stage)
 
 Code rules:
 * Do not add comments unless truly necessary.
@@ -76,6 +79,15 @@ Persistence rules:
 * A storage failure must surface as an error state with a retry button, never as a crash.
 * Only the repository knows about `shared_preferences` and JSON encoding.
 
+API rules:
+
+* `GET /api/trips` returns all saved trips, newest first (an empty list when there are none).
+* `PUT /api/trips/{id}` creates or replaces one trip; the id in the path and in the body must match.
+* `DELETE /api/trips/{id}` removes one trip and answers 204; deleting an unknown id is not an error for the client.
+* Validation errors answer 422 and unknown ids answer 404, with a message in Indonesian.
+* The client maps network errors, timeouts, non-2xx answers and malformed JSON to `ApiException` with an Indonesian message, and the screen shows it with a retry button.
+* `SavedTrip.fromJson` rejects missing or wrongly typed fields with a `FormatException`.
+
 Features:
 
 1. Trip Planner
@@ -115,6 +127,8 @@ UI requirements:
 Deliverables:
 
 * Complete Flutter source code that runs with `flutter run`.
+* FastAPI backend in `backend/` with its own tests, a Dockerfile and a compose file.
+* Unit tests for the API layer: valid model, invalid model, API success, empty data, HTTP failure and malformed JSON.
 * `assets/data/routes.json` (data marked as sample until replaced with researched data).
 * Unit tests for the departure calculator and the saved trip repository (including a persistence round trip).
 * Widget tests for every UI state of both features.
@@ -133,6 +147,8 @@ leave_by/
       routes/app_routes.dart
       constants/buffer_rules.dart
       providers/{clock_provider.dart,id_provider.dart}
+      network/api_exception.dart
+      config/api_config.dart
       utils/{validators.dart,formatters.dart}
     features/
       planner/
@@ -142,11 +158,12 @@ leave_by/
         presentation/  (PlannerScreen, widgets/RouteOptionCard)
       saved_trips/
         domain/        (SavedTrip)
-        data/          (SavedTripRepository, LocalSavedTripRepository, saved_trip_json, saved_trip_providers)
+        data/          (SavedTripRepository, LocalSavedTripRepository, RemoteSavedTripRepository, saved_trip_json, saved_trip_providers)
         application/   (SavedTripsNotifier, SavedTripFormNotifier)
         presentation/  (SavedTripsScreen, SavedTripFormScreen, widgets/SavedTripTile)
     shared/widgets/    (ErrorView, EmptyView, ConfirmDialog)
   assets/data/routes.json
+  backend/             (FastAPI app, tests, Dockerfile, docker-compose.yml)
   test/
   docs/
 ```

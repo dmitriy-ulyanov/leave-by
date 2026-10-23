@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/network/api_exception.dart';
 import '../../../core/routes/app_routes.dart';
 import '../../../shared/widgets/confirm_dialog.dart';
 import '../../../shared/widgets/empty_view.dart';
@@ -21,9 +22,9 @@ class SavedTripsScreen extends ConsumerWidget {
     );
     if (confirmed != true) return;
     final success = await ref.read(savedTripsProvider.notifier).remove(trip.id);
-    if (!success && context.mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Gagal menghapus perjalanan.')));
-    }
+    if (!context.mounted) return;
+    final message = success ? 'Perjalanan dihapus.' : 'Gagal menghapus perjalanan.';
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
@@ -39,8 +40,8 @@ class SavedTripsScreen extends ConsumerWidget {
       ),
       body: saved.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (_, _) => ErrorView(
-          message: 'Gagal memuat perjalanan tersimpan.',
+        error: (error, _) => ErrorView(
+          message: error is ApiException ? error.message : 'Gagal memuat perjalanan tersimpan.',
           onRetry: () => ref.invalidate(savedTripsProvider),
         ),
         data: (trips) {

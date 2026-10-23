@@ -49,3 +49,16 @@ Catatan untuk reviewer:
 
 Yang saya periksa / perbaiki sendiri:
 - (isi)
+
+## P6: Integrasi API (Perjalanan Tersimpan ke backend FastAPI)
+
+Prompt yang dipakai: (isi)
+
+Catatan untuk reviewer:
+- Koneksi ke API: `lib/features/saved_trips/data/remote_saved_trip_repository.dart` dan `backend/app/main.py`
+- Unit test: `test/features/saved_trips/data/` (model valid dan invalid, API sukses, data kosong, HTTP gagal, JSON rusak)
+- Bukti berjalan: (screenshot layar dan log backend)
+
+Yang saya periksa / perbaiki sendiri:
+- (isi)
+

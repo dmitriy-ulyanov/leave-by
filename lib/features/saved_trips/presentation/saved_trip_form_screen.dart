@@ -74,7 +74,11 @@ class _SavedTripFormScreenState extends ConsumerState<SavedTripFormScreen> {
       createdAt: _isEdit ? initial!.createdAt : now,
     );
     final success = await ref.read(savedTripFormProvider.notifier).submit(trip);
-    if (success && mounted) Navigator.of(context).pop();
+    if (!success || !mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(_isEdit ? 'Perubahan tersimpan.' : 'Perjalanan tersimpan.')),
+    );
+    Navigator.of(context).pop();
   }
 
   @override

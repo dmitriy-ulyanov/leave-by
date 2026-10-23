@@ -66,6 +66,7 @@ Nama paket Flutter harus `leave_by` karena test memakai import `package:leave_by
 flutter create --project-name leave_by --platforms=android .
 flutter pub add flutter_riverpod:^2.6.1
 flutter pub add shared_preferences
+flutter pub add http
 ```
 
 Tambahkan aset di `pubspec.yaml`:
@@ -90,6 +91,35 @@ Riverpod sengaja dipin ke 2.x. Riverpod 3 mencoba ulang provider yang gagal seca
 
 `assets/data/routes.json` berisi **data contoh (placeholder)**: durasi, tarif, dan jadwal Kereta Bandara belum diambil dari sumber resmi. Ganti dengan data hasil riset sebelum dipakai untuk evaluasi, dan nyatakan sumbernya di laporan.
 
+## Menjalankan backend (P6)
+
+Backend ada di folder `backend/` (FastAPI, SQLite secara default). Pilih salah satu cara:
+
+```bash
+cd backend
+python -m venv .venv
+.venv\Scripts\activate        # Windows PowerShell
+pip install -r requirements.txt
+uvicorn app.main:app --port 8000
+```
+
+atau dengan Docker:
+
+```bash
+cd backend
+docker compose up --build
+```
+
+Cek: buka `http://localhost:8000/health` (harus `{"status":"ok"}`) dan `http://localhost:8000/docs` untuk dokumentasi interaktif. Test backend: `pip install -r requirements-dev.txt` lalu `python -m pytest`.
+
+Menghubungkan aplikasi ke backend:
+
+- **Windows desktop atau emulator/HP lewat USB:** jalankan `adb reverse tcp:8000 tcp:8000` (untuk perangkat Android), lalu `flutter run`. Alamat bawaan aplikasi adalah `http://localhost:8000`.
+- **Alamat lain** (misalnya terowongan Cloudflare): `flutter run --dart-define=API_BASE_URL=https://alamat-kamu`.
+- **Kembali ke penyimpanan lokal (demo P5):** `flutter run --dart-define=STORAGE=local`.
+
+Untuk build rilis, pastikan `AndroidManifest.xml` utama memuat `<uses-permission android:name="android.permission.INTERNET"/>` (mode debug sudah memilikinya).
+
 ## Status pengerjaan
 
 | Bagian | Status |
@@ -97,8 +127,11 @@ Riverpod sengaja dipin ke 2.x. Riverpod 3 mencoba ulang provider yang gagal seca
 | `DepartureCalculator` + unit test | Ada, `flutter test` lulus |
 | Planner (enam state UI) + widget test | Ada, `flutter test` lulus |
 | Spesifikasi arsitektur (`ARCHITECTURE.md`, P2) | Ada |
-| Perjalanan Tersimpan: CRUD, state management, penyimpanan lokal (P4, P5) | Kode dan test sudah ditulis, belum dijalankan |
-| Routing antar halaman (`app_routes.dart`) | Ada, belum dijalankan |
+| Perjalanan Tersimpan: CRUD, state management, penyimpanan lokal (P4, P5) | Ada, `flutter test` lulus, di-tag `p4-p5` |
+| Backend FastAPI + 13 test backend (P6) | Ada, test backend lulus |
+| `RemoteSavedTripRepository` + unit test API (P6) | Sudah ditulis, belum dijalankan |
+| Autentikasi, lokasi, notifikasi (P7) | Belum |
+| Layout adaptif, keyboard-safe, aksesibilitas, feedback aksi (P8) | Sebagian |
 | Arsitektur hasil AI dan prototype layar (P3) | Belum |
 | Data jadwal asli | Belum |
 | Screenshot/video dokumentasi dan isi `docs/ai-prompts.md` | Kerangka ada, isi belum |
@@ -116,3 +149,11 @@ Riverpod sengaja dipin ke 2.x. Riverpod 3 mencoba ulang provider yang gagal seca
 - `lib/features/planner/application/planner_notifier.dart`
 - `lib/features/saved_trips/application/saved_trips_notifier.dart` dan `saved_trip_form_notifier.dart`
 - Widget hanya memanggil method notifier dan membaca state lewat `ref.watch`.
+
+## Lokasi kode integrasi API (untuk reviewer P6)
+
+- Koneksi ke API: `lib/features/saved_trips/data/remote_saved_trip_repository.dart` (GET, PUT, DELETE ke `/api/trips`)
+- Alamat server dan pilihan penyimpanan: `lib/core/config/api_config.dart`
+- Penanganan kesalahan: `lib/core/network/api_exception.dart`
+- Backend: `backend/app/main.py`
+- Unit test API: `test/features/saved_trips/data/remote_saved_trip_repository_test.dart` dan `saved_trip_json_test.dart`

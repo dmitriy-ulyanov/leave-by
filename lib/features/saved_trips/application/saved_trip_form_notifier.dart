@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/network/api_exception.dart';
 import '../data/saved_trip_providers.dart';
 import '../domain/saved_trip.dart';
 import 'saved_trips_notifier.dart';
@@ -26,8 +27,9 @@ class SavedTripFormNotifier extends Notifier<SavedTripFormState> {
       ref.invalidate(savedTripsProvider);
       state = const SavedTripFormState();
       return true;
-    } catch (_) {
-      state = const SavedTripFormState(errorMessage: 'Gagal menyimpan perjalanan. Coba lagi.');
+    } catch (error) {
+      final message = error is ApiException ? error.message : 'Gagal menyimpan perjalanan. Coba lagi.';
+      state = SavedTripFormState(errorMessage: message);
       return false;
     }
   }
