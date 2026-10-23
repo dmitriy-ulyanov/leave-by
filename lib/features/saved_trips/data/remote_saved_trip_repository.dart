@@ -11,18 +11,16 @@ import 'saved_trip_repository.dart';
 
 class RemoteSavedTripRepository implements SavedTripRepository {
   RemoteSavedTripRepository({
-    required http.Client client,
+    required this.client,
     required String baseUrl,
-    Duration timeout = const Duration(seconds: 10),
-  })  : _client = client,
-        _baseUrl = baseUrl.endsWith('/') ? baseUrl.substring(0, baseUrl.length - 1) : baseUrl,
-        _timeout = timeout;
+    this.timeout = const Duration(seconds: 10),
+  }) : _baseUrl = baseUrl.endsWith('/') ? baseUrl.substring(0, baseUrl.length - 1) : baseUrl;
 
   static const Map<String, String> _jsonHeaders = {'Content-Type': 'application/json'};
 
-  final http.Client _client;
+  final http.Client client;
+  final Duration timeout;
   final String _baseUrl;
-  final Duration _timeout;
 
   Uri _uri(String path) => Uri.parse('$_baseUrl$path');
 
@@ -30,7 +28,7 @@ class RemoteSavedTripRepository implements SavedTripRepository {
 
   @override
   Future<List<SavedTrip>> getAll() async {
-    final response = await _send(() => _client.get(_uri('/api/trips')));
+    final response = await _send(() => client.get(_uri('/api/trips')));
     _ensureSuccess(response);
     final decoded = _decode(response.body);
     if (decoded is! List) throw ApiException.malformed();
@@ -46,20 +44,20 @@ class RemoteSavedTripRepository implements SavedTripRepository {
   @override
   Future<void> save(SavedTrip trip) async {
     final body = jsonEncode(savedTripToJson(trip));
-    final response = await _send(() => _client.put(_uri(_tripPath(trip.id)), headers: _jsonHeaders, body: body));
+    final response = await _send(() => client.put(_uri(_tripPath(trip.id)), headers: _jsonHeaders, body: body));
     _ensureSuccess(response);
   }
 
   @override
   Future<void> delete(String id) async {
-    final response = await _send(() => _client.delete(_uri(_tripPath(id))));
+    final response = await _send(() => client.delete(_uri(_tripPath(id))));
     if (response.statusCode == 404) return;
     _ensureSuccess(response);
   }
 
   Future<http.Response> _send(Future<http.Response> Function() request) async {
     try {
-      return await request().timeout(_timeout);
+      return await request().timeout(timeout);
     } on TimeoutException {
       throw ApiException.timeout();
     } on SocketException {
