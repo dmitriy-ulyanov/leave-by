@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/layout/breakpoints.dart';
 import '../../../core/providers/clock_provider.dart';
 import '../../../core/providers/id_provider.dart';
 import '../../../core/utils/formatters.dart';
@@ -52,6 +53,7 @@ class _SavedTripFormScreenState extends ConsumerState<SavedTripFormScreen> {
 
   Future<void> _submit() async {
     if (!_formKey.currentState!.validate()) return;
+    final messenger = ScaffoldMessenger.of(context);
     final now = ref.read(clockProvider)();
     final arriveBy = Validators.parseTime(_arriveByController.text, now)!;
     final origin = _originController.text.trim();
@@ -75,7 +77,7 @@ class _SavedTripFormScreenState extends ConsumerState<SavedTripFormScreen> {
     );
     final success = await ref.read(savedTripFormProvider.notifier).submit(trip);
     if (!success || !mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(
+    messenger.showSnackBar(
       SnackBar(content: Text(_isEdit ? 'Perubahan tersimpan.' : 'Perjalanan tersimpan.')),
     );
     Navigator.of(context).pop();
@@ -93,57 +95,76 @@ class _SavedTripFormScreenState extends ConsumerState<SavedTripFormScreen> {
     return Scaffold(
       appBar: AppBar(title: Text(_isEdit ? 'Ubah Perjalanan' : 'Perjalanan Baru')),
       body: SingleChildScrollView(
+        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
         padding: const EdgeInsets.all(16),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              TextFormField(
-                key: const Key('tripTitleField'),
-                controller: _titleController,
-                decoration: const InputDecoration(labelText: 'Judul'),
-                validator: Validators.title,
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: formMaxWidth),
+            child: Form(
+              key: _formKey,
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  TextFormField(
+                    key: const Key('tripTitleField'),
+                    controller: _titleController,
+                    scrollPadding: formScrollPadding,
+                    textInputAction: TextInputAction.next,
+                    decoration: const InputDecoration(labelText: 'Judul'),
+                    validator: Validators.title,
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    key: const Key('tripOriginField'),
+                    controller: _originController,
+                    scrollPadding: formScrollPadding,
+                    textInputAction: TextInputAction.next,
+                    decoration: const InputDecoration(labelText: 'Asal'),
+                    validator: (value) => Validators.requiredText(value, 'Asal wajib diisi'),
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    key: const Key('tripDestinationField'),
+                    controller: _destinationController,
+                    scrollPadding: formScrollPadding,
+                    textInputAction: TextInputAction.next,
+                    decoration: const InputDecoration(labelText: 'Tujuan'),
+                    validator: (value) => Validators.tripDestination(value, _originController.text),
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    key: const Key('tripArriveByField'),
+                    controller: _arriveByController,
+                    scrollPadding: formScrollPadding,
+                    keyboardType: TextInputType.datetime,
+                    textInputAction: TextInputAction.next,
+                    decoration: const InputDecoration(labelText: 'Jam tiba (HH:mm)'),
+                    validator: Validators.timeFormat,
+                  ),
+                  const SizedBox(height: 12),
+                  TextFormField(
+                    key: const Key('tripNoteField'),
+                    controller: _noteController,
+                    scrollPadding: formScrollPadding,
+                    maxLines: 3,
+                    decoration: const InputDecoration(labelText: 'Catatan (opsional)'),
+                    validator: Validators.note,
+                  ),
+                  const SizedBox(height: 16),
+                  FilledButton(
+                    key: const Key('tripSubmitButton'),
+                    onPressed: form.isSubmitting ? null : _submit,
+                    child: form.isSubmitting
+                        ? const SizedBox(
+                            width: 20,
+                            height: 20,
+                            child: CircularProgressIndicator(strokeWidth: 2, semanticsLabel: 'Memproses'),
+                          )
+                        : Text(_isEdit ? 'Simpan Perubahan' : 'Simpan Perjalanan'),
+                  ),
+                ],
               ),
-              const SizedBox(height: 12),
-              TextFormField(
-                key: const Key('tripOriginField'),
-                controller: _originController,
-                decoration: const InputDecoration(labelText: 'Asal'),
-                validator: (value) => Validators.requiredText(value, 'Asal wajib diisi'),
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                key: const Key('tripDestinationField'),
-                controller: _destinationController,
-                decoration: const InputDecoration(labelText: 'Tujuan'),
-                validator: (value) => Validators.tripDestination(value, _originController.text),
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                key: const Key('tripArriveByField'),
-                controller: _arriveByController,
-                keyboardType: TextInputType.datetime,
-                decoration: const InputDecoration(labelText: 'Jam tiba (HH:mm)'),
-                validator: Validators.timeFormat,
-              ),
-              const SizedBox(height: 12),
-              TextFormField(
-                key: const Key('tripNoteField'),
-                controller: _noteController,
-                maxLines: 3,
-                decoration: const InputDecoration(labelText: 'Catatan (opsional)'),
-                validator: Validators.note,
-              ),
-              const SizedBox(height: 16),
-              FilledButton(
-                key: const Key('tripSubmitButton'),
-                onPressed: form.isSubmitting ? null : _submit,
-                child: form.isSubmitting
-                    ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
-                    : Text(_isEdit ? 'Simpan Perubahan' : 'Simpan Perjalanan'),
-              ),
-            ],
+            ),
           ),
         ),
       ),

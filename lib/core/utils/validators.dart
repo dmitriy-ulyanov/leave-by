@@ -50,4 +50,34 @@ class Validators {
     if (time.isBefore(now)) return 'Jam tiba sudah lewat';
     return null;
   }
+
+  static final RegExp _emailPattern = RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$');
+
+  static String? email(String? value) {
+    if (value == null || value.trim().isEmpty) return 'Email wajib diisi';
+    if (!_emailPattern.hasMatch(value.trim())) return 'Format email tidak valid';
+    return null;
+  }
+
+  static String? password(String? value) {
+    if (value == null || value.isEmpty) return 'Kata sandi wajib diisi';
+    if (value.length < 8) return 'Kata sandi minimal 8 karakter';
+    return null;
+  }
+
+  static String? requiredPassword(String? value) {
+    return value == null || value.isEmpty ? 'Kata sandi wajib diisi' : null;
+  }
+
+  static String? confirmPassword(String? value, String original) {
+    if (value == null || value.isEmpty) return 'Konfirmasi kata sandi wajib diisi';
+    if (value != original) return 'Kata sandi tidak sama';
+    return null;
+  }
+
+  static String? personName(String? value) {
+    if (value == null || value.trim().isEmpty) return 'Nama wajib diisi';
+    if (value.trim().length > 60) return 'Nama maksimal 60 karakter';
+    return null;
+  }
 }

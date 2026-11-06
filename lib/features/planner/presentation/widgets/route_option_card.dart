@@ -29,21 +29,28 @@ class RouteOptionCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(option.label, style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 4),
-            Text('Berangkat paling lambat ${formatTime(advice.departAt)}'),
-            Text(
-              'Durasi ${option.travelMinutes} menit • ${option.transitCount} transit • ${formatRupiah(option.costRupiah)}',
-            ),
-            Text('Cadangan waktu ${advice.cushion.inMinutes} menit'),
-            if (advice.tags.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: Wrap(
-                  spacing: 8,
-                  children: [for (final tag in advice.tags) Chip(label: Text(_tagLabel(tag)))],
-                ),
+            MergeSemantics(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(option.label, style: Theme.of(context).textTheme.titleMedium),
+                  const SizedBox(height: 4),
+                  Text('Berangkat paling lambat ${formatTime(advice.departAt)}'),
+                  Text(
+                    'Durasi ${option.travelMinutes} menit • ${option.transitCount} transit • ${formatRupiah(option.costRupiah)}',
+                  ),
+                  Text('Cadangan waktu ${advice.cushion.inMinutes} menit'),
+                  if (advice.tags.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 8),
+                      child: Wrap(
+                        spacing: 8,
+                        children: [for (final tag in advice.tags) Chip(label: Text(_tagLabel(tag)))],
+                      ),
+                    ),
+                ],
               ),
+            ),
             if (onSave != null)
               Align(
                 alignment: Alignment.centerRight,

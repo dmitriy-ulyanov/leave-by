@@ -8,6 +8,10 @@ class ApiException implements Exception {
 
   factory ApiException.malformed() => const ApiException('Respons server tidak dapat dibaca.');
 
+  factory ApiException.unauthorized() {
+    return const ApiException('Sesi berakhir. Silakan masuk lagi.', statusCode: 401);
+  }
+
   factory ApiException.http(int statusCode) {
     return ApiException('Server mengembalikan kesalahan (kode $statusCode).', statusCode: statusCode);
   }

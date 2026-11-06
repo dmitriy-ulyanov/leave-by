@@ -148,4 +148,57 @@ void main() {
     final client = MockClient((_) async => http.Response('', 500));
     expect(() => repositoryWith(client).delete('a'), throwsA(apiError(statusCode: 500)));
   });
+
+  test('token dikirim sebagai Bearer pada setiap permintaan', () async {
+    final captured = <http.Request>[];
+    final client = MockClient((request) async {
+      captured.add(request);
+      return request.method == 'GET' ? http.Response('[]', 200) : http.Response('', 204);
+    });
+    final repository = RemoteSavedTripRepository(
+      client: client,
+      baseUrl: 'http://localhost:8765',
+      tokenProvider: () => 'abc.def',
+    );
+
+    await repository.getAll();
+    await repository.save(sampleTrip);
+    await repository.delete('a');
+
+    expect(captured.map((r) => r.headers['Authorization']), everyElement('Bearer abc.def'));
+  });
+
+  test('tanpa token: header Authorization tidak dikirim', () async {
+    late http.Request captured;
+    final client = MockClient((request) async {
+      captured = request;
+      return http.Response('[]', 200);
+    });
+    await repositoryWith(client).getAll();
+    expect(captured.headers.containsKey('Authorization'), isFalse);
+  });
+
+  test('401: memanggil onUnauthorized dan melempar ApiException sesi berakhir', () async {
+    var unauthorizedCalls = 0;
+    final client = MockClient((_) async => http.Response('{"detail":"x"}', 401));
+    final repository = RemoteSavedTripRepository(
+      client: client,
+      baseUrl: 'http://localhost:8765',
+      tokenProvider: () => 'kedaluwarsa',
+      onUnauthorized: () => unauthorizedCalls++,
+    );
+
+    await expectLater(repository.getAll(), throwsA(apiError(statusCode: 401, messageContains: 'Sesi berakhir')));
+    expect(unauthorizedCalls, 1);
+  });
+
+  test('judul berhuruf non-ASCII dibaca benar walau server tanpa charset', () async {
+    final body = jsonEncode([tripJson('a', 'Tebet → Bandara')]);
+    final client = MockClient((_) async {
+      return http.Response.bytes(utf8.encode(body), 200, headers: {'content-type': 'application/json'});
+    });
+    final trips = await repositoryWith(client).getAll();
+    expect(trips.single.title, 'Tebet → Bandara');
+  });
 }
+

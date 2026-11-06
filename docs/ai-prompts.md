@@ -62,3 +62,31 @@ Catatan untuk reviewer:
 Yang saya periksa / perbaiki sendiri:
 - (isi)
 
+## P7: MVP lengkap, fitur lanjutan
+
+Fitur lanjutan yang dipilih: autentikasi, lokasi, notifikasi (manfaatnya ada di `README.md`).
+
+Prompt yang dipakai: (isi)
+
+Catatan untuk reviewer:
+- Autentikasi: `backend/app/auth.py`, `lib/features/auth/`, token dikirim di `remote_saved_trip_repository.dart`
+- Lokasi: (isi setelah dikerjakan)
+- Notifikasi: (isi setelah dikerjakan)
+- Penanganan izin dan pembatalan: (isi setelah dikerjakan)
+
+Yang saya periksa / perbaiki sendiri:
+- (isi)
+
+## P8: Layout adaptif, keyboard-safe, aksesibilitas, feedback aksi
+
+Prompt yang dipakai: (isi)
+
+Catatan untuk reviewer:
+- Layout adaptif: `lib/core/layout/breakpoints.dart` dan `planner_screen.dart`
+- Keyboard-safe, aksesibilitas, feedback aksi: lihat bagian "Lokasi kode P8" di `README.md`
+- Test: `test/ui/`
+- Empat screenshot: (tempel di sini)
+
+Yang saya periksa / perbaiki sendiri:
+- (isi)
+

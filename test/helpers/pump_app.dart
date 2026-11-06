@@ -3,27 +3,40 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:leave_by/core/providers/clock_provider.dart';
 import 'package:leave_by/core/routes/app_routes.dart';
+import 'package:leave_by/features/auth/data/auth_providers.dart';
 import 'package:leave_by/features/saved_trips/data/saved_trip_providers.dart';
 import 'package:leave_by/features/saved_trips/data/saved_trip_repository.dart';
 import 'package:leave_by/features/saved_trips/presentation/saved_trips_screen.dart';
+
+import 'fake_auth_repository.dart';
 
 Future<void> pumpApp(
   WidgetTester tester, {
   SavedTripRepository? repository,
   Widget home = const SavedTripsScreen(),
   List<Override> extraOverrides = const [],
+  Size size = const Size(800, 1600),
+  double textScale = 1.0,
 }) async {
-  tester.view.physicalSize = const Size(800, 1600);
+  tester.view.physicalSize = size;
   tester.view.devicePixelRatio = 1.0;
   addTearDown(tester.view.reset);
   await tester.pumpWidget(
     ProviderScope(
       overrides: [
         if (repository != null) savedTripRepositoryProvider.overrideWithValue(repository),
+        sessionStoreProvider.overrideWithValue(InMemorySessionStore(sampleSession)),
         clockProvider.overrideWithValue(() => DateTime(2026, 10, 3, 8, 0)),
         ...extraOverrides,
       ],
-      child: MaterialApp(home: home, onGenerateRoute: AppRoutes.onGenerateRoute),
+      child: MaterialApp(
+        home: home,
+        onGenerateRoute: AppRoutes.onGenerateRoute,
+        builder: (context, child) => MediaQuery(
+          data: MediaQuery.of(context).copyWith(textScaler: TextScaler.linear(textScale)),
+          child: child!,
+        ),
+      ),
     ),
   );
 }

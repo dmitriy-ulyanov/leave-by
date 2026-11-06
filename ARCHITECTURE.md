@@ -15,7 +15,9 @@ Use this stack:
 * Backend: FastAPI with SQLAlchemy, SQLite by default (folder `backend/`), REST API with JSON properties in camelCase
 * HTTP client: `http` package, used by `RemoteSavedTripRepository` behind the same `SavedTripRepository` interface
 * The local repository stays in the code and is selected with `--dart-define=STORAGE=local`; the default is the remote repository
-* No authentication in this version (planned for the MVP stage)
+* Authentication: email and password, JWT access token (HS256, 7 days) issued by the backend; passwords are stored as salted scrypt hashes
+* The session (token and user) is stored on the device with `shared_preferences` behind a `SessionStore` interface
+* Advanced features planned for the MVP stage: authentication (done first), location, local notifications
 
 Code rules:
 * Do not add comments unless truly necessary.
@@ -60,6 +62,12 @@ Main entities:
    * Note
    * CreatedAt
 
+5. User (server) and AuthSession (client)
+   * Id
+   * Email
+   * Name
+   * Token (client only)
+
 Departure rules:
 
 * `LatestDeparture = ArriveBy - (TravelMinutes + Buffer)`.
@@ -88,6 +96,16 @@ API rules:
 * The client maps network errors, timeouts, non-2xx answers and malformed JSON to `ApiException` with an Indonesian message, and the screen shows it with a retry button.
 * `SavedTrip.fromJson` rejects missing or wrongly typed fields with a `FormatException`.
 
+Authentication rules:
+
+* `POST /api/auth/register` creates an account and returns a token; a duplicate email answers 409.
+* `POST /api/auth/login` returns a token; a wrong email or password answers 401 with the same message for both cases.
+* `GET /api/auth/me` returns the current user.
+* Every `/api/trips` call needs `Authorization: Bearer <token>`; without it the answer is 401.
+* A user only sees and changes their own trips; the same trip id may exist for two different users.
+* A 401 answer in the app clears the saved session and returns the user to the login screen.
+* Passwords need at least 8 characters; emails are trimmed and lowercased.
+
 Features:
 
 1. Trip Planner
@@ -103,6 +121,12 @@ Features:
    * Validate: title required, origin and destination different, note limited to 200 characters.
    * Submit is disabled while saving, so a double tap cannot create duplicates.
 
+3. Authentication
+   * Register, login and logout (logout asks for confirmation).
+   * Validate: email format, password of at least 8 characters, password confirmation must match.
+   * Submit is disabled while the request runs, and server messages (wrong password, email already used) are shown inline.
+   * The saved session is read when the app opens; an `AuthGate` shows the login screen when there is no session.
+
 UI states required for each feature:
 
 * Initial loading
@@ -114,15 +138,23 @@ UI states required for each feature:
 
 Screens and routes:
 
-1. Planner: `/`
+1. Planner (behind login): `/`
 2. Saved Trips list: `/saved`
 3. Saved Trip form (create and edit): `/saved/form`
+4. Login (shown at `/` when signed out) and Register: `/register`
 
 UI requirements:
 
 * Material 3, clean and responsive.
 * Use cards, chips (Tercepat, Termurah, Paling aman), simple forms, a confirmation dialog before delete and empty states.
 * Do not add charts, maps or animations in the first version.
+
+UI quality rules:
+
+* Adaptive layout: below 900 logical pixels the planner is one column; from 900 pixels the form sits on the left (420 wide) and the results on the right; content width is capped (forms 560, lists 720, planner 1200) and centered.
+* Keyboard safety: every form lives in a scrollable area that dismisses the keyboard on drag, fields use `scrollPadding`, the keyboard action moves to the next field and the last field submits the form.
+* Accessibility: every icon button has a tooltip that names the item it acts on, informational cards are announced as one unit, loading indicators have a label, errors and results are live regions, tap targets are at least 48 by 48, and the layouts must not overflow at 2x text scale.
+* Action feedback: every action shows progress or a result (disabled button with spinner, searching text, result count, success message, undo after delete, sign-out message).
 
 Deliverables:
 
@@ -156,6 +188,11 @@ leave_by/
         data/          (RouteRepository, AssetRouteRepository)
         application/   (PlannerState, PlannerNotifier)
         presentation/  (PlannerScreen, widgets/RouteOptionCard)
+      auth/
+        domain/        (AuthSession)
+        data/          (AuthRepository, RemoteAuthRepository, SessionStore, auth_json, auth_providers)
+        application/   (AuthNotifier, LoginFormNotifier, RegisterFormNotifier)
+        presentation/  (AuthGate, LoginScreen, RegisterScreen)
       saved_trips/
         domain/        (SavedTrip)
         data/          (SavedTripRepository, LocalSavedTripRepository, RemoteSavedTripRepository, saved_trip_json, saved_trip_providers)

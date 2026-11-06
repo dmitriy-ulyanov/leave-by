@@ -27,13 +27,13 @@ class SavedTripTile extends StatelessWidget {
             IconButton(
               key: Key('editTrip_${trip.id}'),
               icon: const Icon(Icons.edit_outlined),
-              tooltip: 'Ubah',
+              tooltip: 'Ubah ${trip.title}',
               onPressed: onEdit,
             ),
             IconButton(
               key: Key('deleteTrip_${trip.id}'),
               icon: const Icon(Icons.delete_outline),
-              tooltip: 'Hapus',
+              tooltip: 'Hapus ${trip.title}',
               onPressed: onDelete,
             ),
           ],

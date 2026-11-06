@@ -14,23 +14,33 @@ class RemoteSavedTripRepository implements SavedTripRepository {
     required this.client,
     required String baseUrl,
     this.timeout = const Duration(seconds: 10),
+    this.tokenProvider,
+    this.onUnauthorized,
   }) : _baseUrl = baseUrl.endsWith('/') ? baseUrl.substring(0, baseUrl.length - 1) : baseUrl;
-
-  static const Map<String, String> _jsonHeaders = {'Content-Type': 'application/json'};
 
   final http.Client client;
   final Duration timeout;
+  final String? Function()? tokenProvider;
+  final void Function()? onUnauthorized;
   final String _baseUrl;
 
   Uri _uri(String path) => Uri.parse('$_baseUrl$path');
 
   String _tripPath(String id) => '/api/trips/${Uri.encodeComponent(id)}';
 
+  Map<String, String> _headers({bool json = false}) {
+    final token = tokenProvider?.call();
+    return {
+      if (json) 'Content-Type': 'application/json',
+      if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
+    };
+  }
+
   @override
   Future<List<SavedTrip>> getAll() async {
-    final response = await _send(() => client.get(_uri('/api/trips')));
+    final response = await _send(() => client.get(_uri('/api/trips'), headers: _headers()));
     _ensureSuccess(response);
-    final decoded = _decode(response.body);
+    final decoded = _decode(response);
     if (decoded is! List) throw ApiException.malformed();
     try {
       return decoded.map((row) => savedTripFromJson(row as Map<String, dynamic>)).toList();
@@ -44,13 +54,15 @@ class RemoteSavedTripRepository implements SavedTripRepository {
   @override
   Future<void> save(SavedTrip trip) async {
     final body = jsonEncode(savedTripToJson(trip));
-    final response = await _send(() => client.put(_uri(_tripPath(trip.id)), headers: _jsonHeaders, body: body));
+    final response = await _send(
+      () => client.put(_uri(_tripPath(trip.id)), headers: _headers(json: true), body: body),
+    );
     _ensureSuccess(response);
   }
 
   @override
   Future<void> delete(String id) async {
-    final response = await _send(() => client.delete(_uri(_tripPath(id))));
+    final response = await _send(() => client.delete(_uri(_tripPath(id)), headers: _headers()));
     if (response.statusCode == 404) return;
     _ensureSuccess(response);
   }
@@ -68,14 +80,18 @@ class RemoteSavedTripRepository implements SavedTripRepository {
   }
 
   void _ensureSuccess(http.Response response) {
+    if (response.statusCode == 401) {
+      onUnauthorized?.call();
+      throw ApiException.unauthorized();
+    }
     if (response.statusCode < 200 || response.statusCode > 299) {
       throw ApiException.http(response.statusCode);
     }
   }
 
-  Object? _decode(String body) {
+  Object? _decode(http.Response response) {
     try {
-      return jsonDecode(body);
+      return jsonDecode(utf8.decode(response.bodyBytes));
     } on FormatException {
       throw ApiException.malformed();
     }

@@ -26,7 +26,8 @@ Pengguna memasukkan asal, tujuan, dan jam tiba yang dibutuhkan. Aplikasi menampi
 2. Daftar opsi rute per moda: durasi, jumlah transit, estimasi biaya.
 3. Perhitungan waktu berangkat paling lambat per opsi, dengan buffer per moda dan pembulatan ke jadwal keberangkatan untuk moda berjadwal.
 4. Label opsi: tercepat, termurah, paling aman.
-5. Perjalanan Tersimpan: simpan, lihat, ubah, dan hapus perjalanan secara lokal di perangkat (data tetap ada setelah aplikasi ditutup).
+5. Perjalanan Tersimpan: simpan, lihat, ubah, dan hapus perjalanan (di perangkat, atau di server untuk pengguna yang sudah masuk).
+6. Akun: daftar, masuk, dan keluar, sehingga perjalanan tersimpan menjadi milik masing-masing pengguna.
 
 ## 5. Fitur yang tidak dikerjakan
 
@@ -43,6 +44,7 @@ Pengguna memasukkan asal, tujuan, dan jam tiba yang dibutuhkan. Aplikasi menampi
 - Opsi yang mustahil dikejar tidak ditampilkan, dan pengguna melihat pesan yang jelas bila tidak ada opsi.
 - Pengguna dapat memutuskan moda dan waktu berangkat dalam waktu kurang dari satu menit.
 - Perjalanan yang disimpan masih ada setelah aplikasi ditutup dan dibuka kembali, dan CRUD-nya berfungsi.
+- Pengguna hanya melihat perjalanannya sendiri, dan sesi masuk bertahan setelah aplikasi dibuka ulang.
 - Aplikasi berjalan di emulator/perangkat tanpa crash dan setiap state utama punya widget test.
 
 ## Rencana 8 minggu
@@ -100,7 +102,7 @@ cd backend
 python -m venv .venv
 .venv\Scripts\activate        # Windows PowerShell
 pip install -r requirements.txt
-uvicorn app.main:app --port 8000
+uvicorn app.main:app --port 8765
 ```
 
 atau dengan Docker:
@@ -110,15 +112,29 @@ cd backend
 docker compose up --build
 ```
 
-Cek: buka `http://localhost:8000/health` (harus `{"status":"ok"}`) dan `http://localhost:8000/docs` untuk dokumentasi interaktif. Test backend: `pip install -r requirements-dev.txt` lalu `python -m pytest`.
+Port 8765 dipilih karena port 8000 diblokir di sebagian komputer Windows. Dengan Docker, port 8765 di komputer diarahkan ke port 8000 di kontainer.
+
+Sejak ada login (P7), backend memakai tabel pengguna. Kalau kamu pernah menjalankan versi sebelumnya, **hapus dulu file `backend/leave_by.db`** (isinya hanya data uji) supaya tabel dibuat ulang, lalu jalankan `pip install -r requirements.txt` lagi. Kunci penanda tangan token dibaca dari variabel lingkungan `JWT_SECRET`; nilai bawaannya hanya untuk pengembangan dan harus diganti kalau backend dipasang di internet.
+
+Cek: buka `http://localhost:8765/health` (harus `{"status":"ok"}`) dan `http://localhost:8765/docs` untuk dokumentasi interaktif. Test backend: `pip install -r requirements-dev.txt` lalu `python -m pytest`.
 
 Menghubungkan aplikasi ke backend:
 
-- **Windows desktop atau emulator/HP lewat USB:** jalankan `adb reverse tcp:8000 tcp:8000` (untuk perangkat Android), lalu `flutter run`. Alamat bawaan aplikasi adalah `http://localhost:8000`.
+- **Windows desktop atau emulator/HP lewat USB:** jalankan `adb reverse tcp:8765 tcp:8765` (untuk perangkat Android), lalu `flutter run`. Alamat bawaan aplikasi adalah `http://localhost:8765`.
 - **Alamat lain** (misalnya terowongan Cloudflare): `flutter run --dart-define=API_BASE_URL=https://alamat-kamu`.
 - **Kembali ke penyimpanan lokal (demo P5):** `flutter run --dart-define=STORAGE=local`.
 
 Untuk build rilis, pastikan `AndroidManifest.xml` utama memuat `<uses-permission android:name="android.permission.INTERNET"/>` (mode debug sudah memilikinya).
+
+## Fitur lanjutan (P7) dan manfaatnya bagi pengguna
+
+| Fitur | Manfaat bagi pengguna | Status |
+|---|---|---|
+| Autentikasi (daftar, masuk, keluar) | Perjalanan tersimpan menjadi milik pribadi dan tidak terlihat orang lain; tetap masuk setelah aplikasi ditutup | Kode dan test ditulis, belum dijalankan di perangkat |
+| Lokasi | Asal terisi otomatis dari posisi saat ini, jadi pengguna yang terburu-buru tidak perlu mengetik | Belum |
+| Notifikasi | Pengingat tepat pada waktu berangkat paling lambat, jadi pengguna tidak perlu memantau jam sendiri | Belum |
+
+Catatan keamanan autentikasi: kata sandi disimpan di server sebagai hash scrypt (tidak pernah mentah), token berumur 7 hari, dan data setiap pengguna dipisahkan di server. Keterbatasan versi ini: token disimpan di penyimpanan lokal aplikasi tanpa enkripsi tambahan, belum ada pembatasan percobaan masuk, dan koneksi memakai HTTP biasa di jaringan lokal (untuk internet gunakan HTTPS, misalnya lewat terowongan Cloudflare).
 
 ## Status pengerjaan
 
@@ -127,14 +143,14 @@ Untuk build rilis, pastikan `AndroidManifest.xml` utama memuat `<uses-permission
 | `DepartureCalculator` + unit test | Ada, `flutter test` lulus |
 | Planner (enam state UI) + widget test | Ada, `flutter test` lulus |
 | Spesifikasi arsitektur (`ARCHITECTURE.md`, P2) | Ada |
-| Perjalanan Tersimpan: CRUD, state management, penyimpanan lokal (P4, P5) | Ada, `flutter test` lulus, di-tag `p4-p5` |
-| Backend FastAPI + 13 test backend (P6) | Ada, test backend lulus |
-| `RemoteSavedTripRepository` + unit test API (P6) | Sudah ditulis, belum dijalankan |
-| Autentikasi, lokasi, notifikasi (P7) | Belum |
-| Layout adaptif, keyboard-safe, aksesibilitas, feedback aksi (P8) | Sebagian |
+| Perjalanan Tersimpan: CRUD, state management, penyimpanan lokal (P4, P5) | Ada, di-tag `p4-p5` |
+| Backend FastAPI + `RemoteSavedTripRepository` + unit test API (P6) | Ada, `flutter test` lulus |
+| Autentikasi: backend (32 test lulus) dan layar masuk, daftar, keluar | Ditulis, test Flutter belum dijalankan |
+| Lokasi dan notifikasi (P7) | Belum |
+| Layout adaptif, keyboard-safe, aksesibilitas dasar, feedback aksi (P8) | Kode dan test ditulis, belum dijalankan |
 | Arsitektur hasil AI dan prototype layar (P3) | Belum |
 | Data jadwal asli | Belum |
-| Screenshot/video dokumentasi dan isi `docs/ai-prompts.md` | Kerangka ada, isi belum |
+| Demo P5 dan P6, isi `docs/ai-prompts.md` | Belum |
 
 ## Lokasi kode Local Data & Persistence (untuk reviewer P5)
 
@@ -157,3 +173,35 @@ Untuk build rilis, pastikan `AndroidManifest.xml` utama memuat `<uses-permission
 - Penanganan kesalahan: `lib/core/network/api_exception.dart`
 - Backend: `backend/app/main.py`
 - Unit test API: `test/features/saved_trips/data/remote_saved_trip_repository_test.dart` dan `saved_trip_json_test.dart`
+
+## Lokasi kode autentikasi (untuk reviewer P7)
+
+- Backend: `backend/app/auth.py` (daftar, masuk, `/me`, pelindung rute), `backend/app/security.py` (hash kata sandi dan token)
+- Data perjalanan per pengguna: `backend/app/main.py` dan `backend/app/models.py`
+- Flutter: `lib/features/auth/` (`data/` repository dan penyimpanan sesi, `application/` notifier, `presentation/` layar masuk, daftar, dan `AuthGate`)
+- Token dikirim ke API perjalanan di `lib/features/saved_trips/data/remote_saved_trip_repository.dart`; respons 401 otomatis mengeluarkan pengguna
+- Test: `backend/tests/test_auth.py`, `backend/tests/test_trips.py`, dan `test/features/auth/`
+
+## Panduan P8 dan empat screenshot untuk reviewer
+
+Reviewer menilai saat aplikasi berjalan. Cara menghasilkan tiap bukti:
+
+| No | Butir | Cara menunjukkan |
+|---|---|---|
+| 1 | Layout adaptif | Jalankan di Windows (`flutter run -d windows`), lalu ubah ukuran jendela. Lebar kurang dari 900 px: satu kolom. Lebar 900 px atau lebih: formulir di kiri, hasil rute di kanan. Screenshot planner dengan hasil pada dua ukuran (boleh digabung dalam satu gambar). Di Android: putar layar atau pakai emulator tablet |
+| 2 | Keyboard-safe | Hanya bisa diperlihatkan di Android (HP atau emulator). Buka layar Daftar atau formulir perjalanan, ketuk kolom terbawah, dan screenshot saat keyboard terbuka dengan kolom tetap terlihat |
+| 3 | Aksesibilitas dasar | Jalankan dengan `flutter run --dart-define=SEMANTICS_DEBUG=true` untuk menampilkan lapisan label semantik, atau di Android aktifkan TalkBack dan ukuran huruf terbesar. Screenshot layar dengan label atau teks besar |
+| 4 | Feedback aksi | Screenshot indikator "Mencari rute…" saat mencari, atau pesan "Perjalanan dihapus." beserta tombol Urungkan, atau "Perjalanan tersimpan." |
+
+Yang sudah diterapkan: tata letak dua kolom di layar lebar dan lebar konten dibatasi; semua formulir bisa digulir, menutup keyboard saat digeser, berpindah kolom dengan tombol Berikutnya, dan terkirim dengan tombol Selesai; semua tombol ikon berlabel (nama perjalanan ikut disebut), kartu rute dibaca sebagai satu kesatuan, pesan kesalahan dan hasil diumumkan ke pembaca layar, dan tampilan diuji pada teks 2x; setiap aksi memberi umpan balik (spinner, "Mencari rute…", "Ditemukan N opsi rute", pesan sukses, Urungkan setelah hapus, "Kamu sudah keluar").
+
+Interpretasi "4 screenshot" di atas (satu per butir) sebaiknya dikonfirmasi ke dosen.
+
+## Lokasi kode P8 (untuk reviewer)
+
+- Layout adaptif: `lib/core/layout/breakpoints.dart`, `lib/features/planner/presentation/planner_screen.dart`, serta pembatasan lebar di `saved_trips_screen.dart`, `saved_trip_form_screen.dart`, dan layar masuk
+- Keyboard-safe: area gulir, `scrollPadding`, `textInputAction` di semua formulir
+- Aksesibilitas: `tooltip` dan `Semantics` di `saved_trip_tile.dart`, `route_option_card.dart`, dan `error_view.dart`; label pada indikator loading
+- Feedback aksi: `planner_screen.dart`, `saved_trips_screen.dart` (Urungkan), `saved_trip_form_screen.dart`, layar masuk dan daftar
+- Test: `test/ui/` (layout, keyboard, aksesibilitas termasuk pedoman target sentuh, dan feedback)
+

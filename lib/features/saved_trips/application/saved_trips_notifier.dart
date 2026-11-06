@@ -3,9 +3,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../data/saved_trip_providers.dart';
 import '../domain/saved_trip.dart';
 
-final savedTripsProvider = AsyncNotifierProvider<SavedTripsNotifier, List<SavedTrip>>(SavedTripsNotifier.new);
+final savedTripsProvider =
+    AsyncNotifierProvider.autoDispose<SavedTripsNotifier, List<SavedTrip>>(SavedTripsNotifier.new);
 
-class SavedTripsNotifier extends AsyncNotifier<List<SavedTrip>> {
+class SavedTripsNotifier extends AutoDisposeAsyncNotifier<List<SavedTrip>> {
   @override
   Future<List<SavedTrip>> build() => ref.read(savedTripRepositoryProvider).getAll();
 
