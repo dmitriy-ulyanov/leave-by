@@ -1,7 +1,8 @@
+import re
 from datetime import datetime
 from typing import Optional
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
 from pydantic.alias_generators import to_camel
 
 
@@ -37,3 +38,49 @@ class TripOut(CamelModel):
     depart_at: Optional[datetime]
     note: str
     created_at: datetime
+
+
+EMAIL_PATTERN = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+
+
+def _clean_email(value: str) -> str:
+    value = value.strip().lower()
+    if len(value) > 254 or not EMAIL_PATTERN.fullmatch(value):
+        raise ValueError("Format email tidak valid")
+    return value
+
+
+class RegisterIn(BaseModel):
+    name: str = Field(min_length=1, max_length=60)
+    email: str
+    password: str = Field(min_length=8, max_length=128)
+
+    @field_validator("email")
+    @classmethod
+    def email_must_be_valid(cls, value: str) -> str:
+        return _clean_email(value)
+
+    @field_validator("name")
+    @classmethod
+    def name_must_not_be_blank(cls, value: str) -> str:
+        if not value.strip():
+            raise ValueError("Nama wajib diisi")
+        return value.strip()
+
+
+class LoginIn(BaseModel):
+    email: str = Field(min_length=1, max_length=254)
+    password: str = Field(min_length=1, max_length=128)
+
+
+class UserOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: str
+    email: str
+    name: str
+
+
+class AuthOut(BaseModel):
+    token: str
+    user: UserOut
